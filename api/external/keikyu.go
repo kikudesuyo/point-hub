@@ -41,6 +41,7 @@ func NewKeikyuClient() (*KeikyuClient, error) {
 	return &KeikyuClient{httpClient: client}, nil
 }
 
+// getメソッドでトークン取得
 func (k *KeikyuClient) getMGToken() (string, error) {
 	req, _ := http.NewRequest("GET", keikyuLoginPageURL, nil)
 	req.Header.Set("User-Agent", keikyuUserAgent)
@@ -65,13 +66,10 @@ func (k *KeikyuClient) getMGToken() (string, error) {
 
 // Login は標準のhttpリクエストで認証を行う
 func (k *KeikyuClient) Login(loginID, password string) error {
-	// 1. ログインページにアクセスしてトークンを取得
 	token, err := k.getMGToken()
 	if err != nil {
 		return err
 	}
-
-	// 2. POSTリクエストでログイン
 	form := url.Values{}
 	form.Add("mg_token", token)
 	form.Add("ninsyo_id", loginID)
@@ -88,8 +86,7 @@ func (k *KeikyuClient) Login(loginID, password string) error {
 		return fmt.Errorf("ログインPOST失敗: %w", err)
 	}
 	defer postResp.Body.Close()
-
-	// ログイン後のURLを確認（auth/login以外なら成功とみなす）
+	// ログイン後のURLを確認
 	finalURL := postResp.Request.URL.String()
 	if strings.Contains(finalURL, "auth/login") {
 		return fmt.Errorf("ログイン失敗: 認証情報を確認してください")
