@@ -73,7 +73,12 @@ func (m *MetpoClient) Login(email, password string) error {
 	var loginErr error
 	loggedIn := false
 
+	posted := false // 無限ループ防止: ログインPOSTは1回のみ
 	c.OnHTML("form#loginModel", func(e *colly.HTMLElement) {
+		if posted {
+			return
+		}
+		posted = true
 		if err := e.Request.Post(loginPostURL, map[string]string{
 			"customerNumber": email,
 			"webPassword":    password,
