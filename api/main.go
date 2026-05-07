@@ -15,19 +15,19 @@ func main() {
 		log.Fatal(".envの読み込みに失敗:", err)
 	}
 
-	loginID := os.Getenv("KEIKYU_LOGIN_ID")
-	password := os.Getenv("KEIKYU_PASSWORD")
-	if loginID == "" || password == "" {
-		log.Fatal("KEIKYU_LOGIN_ID / KEIKYU_PASSWORD が未設定です")
+	cardNo := os.Getenv("TOEI_USER_ID")
+	password := os.Getenv("TOEI_METRO_PASSWORD")
+	if cardNo == "" || password == "" {
+		log.Fatal("TOEI_USER_ID / TOEI_METRO_PASSWORD が未設定です")
 	}
 
-	client, err := external.NewKeikyuClient()
+	client, err := external.NewToeiMetroClient()
 	if err != nil {
 		log.Fatal("クライアント初期化失敗:", err)
 	}
 
 	fmt.Println("ログイン中...")
-	if err := client.Login(loginID, password); err != nil {
+	if err := client.Login(cardNo, password); err != nil {
 		log.Fatal("ログイン失敗:", err)
 	}
 	fmt.Println("✅ ログイン成功")
@@ -40,9 +40,6 @@ func main() {
 
 	fmt.Printf("\n── 会員情報 ──────────────────────\n")
 	fmt.Printf("名前          : %s\n", data.Name)
-	fmt.Printf("会員No        : %s\n", data.MemberNo)
 	fmt.Printf("\n── ポイント ──────────────────────\n")
-	fmt.Printf("利用可能ポイント: %d pt\n", data.AvailablePoint)
-	fmt.Printf("期間限定ポイント: %d pt\n", data.LimitedPoint)
-	fmt.Printf("失効情報        : %s\n", data.RevocationInfo)
+	fmt.Printf("保有ポイント  : %d pt\n", data.Point)
 }
