@@ -24,8 +24,8 @@ type UnifiedPoint struct {
 }
 
 type PointReport struct {
-	TotalBalance   int            `json:"total_balance"`
-	Details        []UnifiedPoint `json:"details"`
+	TotalBalance   int               `json:"total_balance"`
+	Details        []UnifiedPoint    `json:"details"`
 	UpdatedCookies map[string]string `json:"updated_cookies,omitempty"`
 }
 
@@ -78,9 +78,6 @@ func (s *PointService) fetchTokyu(report *PointReport) {
 	// Update session tokens if provided in environment
 	if token != "" {
 		cookies["__Host-plus.sessionToken"] = token
-		cookies["nToken"] = token
-		cookies["s.sessionToken"] = token
-		cookies["onToken"] = token
 	}
 
 	if len(cookies) == 0 {
@@ -223,10 +220,6 @@ func (s *PointService) finalizePoint(up *UnifiedPoint) {
 
 func (s *PointService) syncTokyuCookies(report *PointReport, updated map[string]string) {
 	newToken := updated["__Host-plus.sessionToken"]
-	if newToken == "" {
-		newToken = updated["nToken"]
-	}
-
 	if newToken != "" && newToken != os.Getenv("TOKYU_SESSION_TOKEN") {
 		if report.UpdatedCookies == nil {
 			report.UpdatedCookies = make(map[string]string)
