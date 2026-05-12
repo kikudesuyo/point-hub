@@ -1,11 +1,13 @@
 <script lang="ts">
 	type ExpiryInfo = { points: number; date: string };
+	type SubPoint = { name: string; balance: number };
 	type UnifiedPoint = {
 		provider: string;
 		balance: number;
 		expiry_date: string;
 		expiry_list: ExpiryInfo[];
 		hasError?: boolean;
+		sub_points?: SubPoint[];
 	};
 
 	let { detail } = $props<{ detail: UnifiedPoint }>();
@@ -27,6 +29,16 @@
 			<div class="mb-2 text-3xl font-bold text-gray-900">
 				{detail.balance.toLocaleString()} <span class="text-lg font-medium text-gray-500">pt</span>
 			</div>
+			{#if detail.sub_points && detail.sub_points.length > 0}
+				<div class="mt-2 mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+					{#each detail.sub_points as sp}
+						<div class="flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 border border-gray-100">
+							<span class="font-medium">{sp.name}:</span>
+							<span>{sp.balance.toLocaleString()} pt</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		{/if}
 	</div>
 

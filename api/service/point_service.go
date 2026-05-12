@@ -142,26 +142,17 @@ func (s *PointService) FetchSotetsu() ([]UnifiedPoint, error) {
 }
 
 func (s *PointService) FetchKeikyu() ([]UnifiedPoint, error) {
-	user, pass := os.Getenv("KEIKYU_LOGIN_ID"), os.Getenv("KEIKYU_PASSWORD")
-	if user == "" || pass == "" {
-		return nil, fmt.Errorf("credentials not found")
-	}
-
-	if err := s.keikyu.Login(user, pass); err != nil {
-		return nil, fmt.Errorf("keikyu login error: %w", err)
-	}
-
 	data, err := s.keikyu.FetchAll()
 	if err != nil {
 		return nil, fmt.Errorf("keikyu fetch error: %w", err)
 	}
 
 	up := UnifiedPoint{
-		Provider: "Keikyu", 
-		Balance: data.AvailablePoint + data.LimitedPoint,
+		Provider:   "Keikyu",
+		Balance:    data.AvailablePoint + data.LimitedPoint,
 		ExpiryDate: strings.TrimSpace(data.RevocationInfo),
 	}
-	
+
 	var subPoints []SubPoint
 	if data.AvailablePoint > 0 {
 		subPoints = append(subPoints, SubPoint{Name: "通常ポイント", Balance: data.AvailablePoint})
@@ -170,7 +161,7 @@ func (s *PointService) FetchKeikyu() ([]UnifiedPoint, error) {
 		subPoints = append(subPoints, SubPoint{Name: "期間限定ポイント", Balance: data.LimitedPoint})
 	}
 	up.SubPoints = subPoints
-	
+
 	return []UnifiedPoint{up}, nil
 }
 

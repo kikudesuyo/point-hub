@@ -4,7 +4,8 @@
 	import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
 	type ExpiryInfo = { points: number; date: string };
-	type UnifiedPoint = { provider: string; balance: number; expiry_date: string; expiry_list: ExpiryInfo[], hasError?: boolean };
+	type SubPoint = { name: string; balance: number };
+	type UnifiedPoint = { provider: string; balance: number; expiry_date: string; expiry_list: ExpiryInfo[], hasError?: boolean, sub_points?: SubPoint[] };
 
 	let details: UnifiedPoint[] = $state([]);
 	let totalBalance: number = $state(0);

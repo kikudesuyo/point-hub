@@ -1,10 +1,12 @@
 package external
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -16,6 +18,7 @@ const (
 	keikyuLoginPostURL = "https://kqpoint-portal.keikyu-point.jp/mypage/auth/login"
 	keikyuMyPageURL    = "https://kqpoint-portal.keikyu-point.jp/mypage/"
 	keikyuUserAgent    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+	keikyuCookieFile   = "keikyu_cookie.json"
 )
 
 type KeikyuClient struct {
@@ -33,10 +36,52 @@ func NewKeikyuClient() (*KeikyuClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{
-		Jar: jar,
+	k := &KeikyuClient{
+		httpClient: &http.Client{Jar: jar},
 	}
-	return &KeikyuClient{httpClient: client}, nil
+	k.loadCookies()
+	return k, nil
+}
+
+func (k *KeikyuClient) loadCookies() {
+	cookies := make(map[string]string)
+	data, err := os.ReadFile(keikyuCookieFile)
+	if err == nil {
+		json.Unmarshal(data, &cookies)
+		k.SetCookies(cookies)
+	}
+}
+
+func (k *KeikyuClient) saveCookies() {
+	cookies := k.GetCookies()
+	data, _ := json.MarshalIndent(cookies, "", "  ")
+	os.WriteFile(keikyuCookieFile, data, 0644)
+}
+
+func (k *KeikyuClient) SetCookies(cookies map[string]string) {
+	u, _ := url.Parse("https://kqpoint-portal.keikyu-point.jp")
+	var httpCookies []*http.Cookie
+	for name, value := range cookies {
+		if value == "" {
+			continue
+		}
+		httpCookies = append(httpCookies, &http.Cookie{
+			Name:   name,
+			Value:  value,
+			Path:   "/",
+			Domain: u.Host,
+		})
+	}
+	k.httpClient.Jar.SetCookies(u, httpCookies)
+}
+
+func (k *KeikyuClient) GetCookies() map[string]string {
+	u, _ := url.Parse("https://kqpoint-portal.keikyu-point.jp")
+	cookies := make(map[string]string)
+	for _, c := range k.httpClient.Jar.Cookies(u) {
+		cookies[c.Name] = c.Value
+	}
+	return cookies
 }
 
 // getメソッドでトークン取得
@@ -64,6 +109,7 @@ func (k *KeikyuClient) getMGToken() (string, error) {
 
 // Login は標準のhttpリクエストで認証を行う
 func (k *KeikyuClient) Login(loginID, password string) error {
+	defer k.saveCookies()
 	token, err := k.getMGToken()
 	if err != nil {
 		return err
