@@ -134,35 +134,28 @@ func (t *TokyuClient) GetCookies() map[string]string {
 }
 
 func (t *TokyuClient) setHeaders(req *http.Request) {
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-	req.Header.Set("Accept-Language", "ja,en-US;q=0.9,en;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9,ja;q=0.8")
 	req.Header.Set("Cache-Control", "max-age=0")
-	req.Header.Set("Sec-Ch-Ua", `"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"`)
+	req.Header.Set("Priority", "u=0, i")
+	req.Header.Set("Referer", "https://plus.tokyu.co.jp/")
+	req.Header.Set("Sec-Ch-Ua", `"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"`)
 	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
 	req.Header.Set("Sec-Ch-Ua-Platform", `"macOS"`)
 	req.Header.Set("Sec-Fetch-Dest", "document")
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
-	req.Header.Set("Sec-Fetch-Site", "none")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
 	req.Header.Set("Sec-Fetch-User", "?1")
 	req.Header.Set("Upgrade-Insecure-Requests", "1")
 }
 
 func (t *TokyuClient) FetchAll() (*TokyuData, error) {
-	defer t.saveCookies()
 	data := &TokyuData{}
-
-	// トップページに一度アクセスして Cookie を更新する（GA やセッションの延命）
-	rootReq, _ := http.NewRequest("GET", tokyuRootURL, nil)
-	t.setHeaders(rootReq)
-	rootResp, err := t.client.Do(rootReq)
-	if err == nil {
-		rootResp.Body.Close()
-	}
 
 	req, _ := http.NewRequest("GET", tokyuDetailURL, nil)
 	t.setHeaders(req)
-
+	
 	resp, err := t.client.Do(req)
 	if err != nil {
 		return nil, err

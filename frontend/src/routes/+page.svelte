@@ -4,7 +4,7 @@
 	import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
 	type ExpiryInfo = { points: number; date: string };
-	type UnifiedPoint = { provider: string; balance: number; expiry_date: string; expiry_list: ExpiryInfo[] };
+	type UnifiedPoint = { provider: string; balance: number; expiry_date: string; expiry_list: ExpiryInfo[], hasError?: boolean };
 
 	let details: UnifiedPoint[] = $state([]);
 	let totalBalance: number = $state(0);
@@ -33,6 +33,9 @@
 				}
 			} catch (e: any) {
 				errors = [...errors, e.message || `${provider} で不明なエラーが発生しました`];
+				// エラー発生時はエラーフラグ付きのダミーオブジェクトをカードとして表示するために追加
+				const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
+				details = [...details, { provider: providerName, balance: 0, expiry_date: '--', expiry_list: [], hasError: true }];
 			}
 		});
 

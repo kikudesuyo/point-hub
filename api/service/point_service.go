@@ -2,10 +2,11 @@ package service
 
 import (
 	"fmt"
-	"github.com/kikudesuyo/point-hub/external"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/kikudesuyo/point-hub/external"
 )
 
 type ExpiryInfo struct {
@@ -13,11 +14,17 @@ type ExpiryInfo struct {
 	Date   string `json:"date"` // YYYY-MM-DD
 }
 
+type SubPoint struct {
+	Name    string `json:"name"`
+	Balance int    `json:"balance"`
+}
+
 type UnifiedPoint struct {
 	Provider   string       `json:"provider"`
 	Balance    int          `json:"balance"`
 	ExpiryDate string       `json:"expiry_date"` // Nearest expiry date
 	ExpiryList []ExpiryInfo `json:"expiry_list,omitempty"`
+	SubPoints  []SubPoint   `json:"sub_points,omitempty"`
 }
 
 type PointService struct {
@@ -113,16 +120,25 @@ func (s *PointService) FetchSotetsu() ([]UnifiedPoint, error) {
 		return nil, fmt.Errorf("sotetsu fetch error: %w", err)
 	}
 
-	var results []UnifiedPoint
-	results = append(results, UnifiedPoint{
-		Provider: "Sotetsu", Balance: data.Point, ExpiryDate: data.PointExpiry,
-	})
-	if data.Mile > 0 {
-		results = append(results, UnifiedPoint{
-			Provider: "Sotetsu (Mile)", Balance: data.Mile, ExpiryDate: data.MileExpiry,
-		})
+	up := UnifiedPoint{
+		Provider: "Sotetsu",
+		Balance:  data.Point + data.Mile,
 	}
-	return results, nil
+	
+	s.addExpiry(&up, data.Point, data.PointExpiry)
+	s.addExpiry(&up, data.Mile, data.MileExpiry)
+	
+	var subPoints []SubPoint
+	if data.Point > 0 {
+		subPoints = append(subPoints, SubPoint{Name: "相鉄ポイント", Balance: data.Point})
+	}
+	if data.Mile > 0 {
+		subPoints = append(subPoints, SubPoint{Name: "相鉄マイル", Balance: data.Mile})
+	}
+	up.SubPoints = subPoints
+	
+	s.finalizePoint(&up)
+	return []UnifiedPoint{up}, nil
 }
 
 func (s *PointService) FetchKeikyu() ([]UnifiedPoint, error) {
@@ -140,10 +156,22 @@ func (s *PointService) FetchKeikyu() ([]UnifiedPoint, error) {
 		return nil, fmt.Errorf("keikyu fetch error: %w", err)
 	}
 
-	return []UnifiedPoint{{
-		Provider: "Keikyu", Balance: data.AvailablePoint + data.LimitedPoint,
+	up := UnifiedPoint{
+		Provider: "Keikyu", 
+		Balance: data.AvailablePoint + data.LimitedPoint,
 		ExpiryDate: strings.TrimSpace(data.RevocationInfo),
-	}}, nil
+	}
+	
+	var subPoints []SubPoint
+	if data.AvailablePoint > 0 {
+		subPoints = append(subPoints, SubPoint{Name: "通常ポイント", Balance: data.AvailablePoint})
+	}
+	if data.LimitedPoint > 0 {
+		subPoints = append(subPoints, SubPoint{Name: "期間限定ポイント", Balance: data.LimitedPoint})
+	}
+	up.SubPoints = subPoints
+	
+	return []UnifiedPoint{up}, nil
 }
 
 // Helpers
